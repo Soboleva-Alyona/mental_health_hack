@@ -12,12 +12,10 @@ app = Flask(__name__)
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
-def cv(data):
-    count_vectorizer = CountVectorizer()
+str = 'admiration	amusement	anger	annoyance	approval	caring	confusion	curiosity	desire	disappointment	disapproval	disgust	embarrassment	excitement	fear	gratitude	grief	joy	love	nervousness	optimism	pride	realization	relief	remorse	sadness	surprise	neutral'
 
-    emb = count_vectorizer.fit_transform(data)
+emotions_list = str.split('\t')
 
-    return emb, count_vectorizer
 
 
 @app.route('/predict', methods=['POST'])
@@ -25,13 +23,15 @@ def predict():
     if lr:
         try:
             json_ = request.json
-            query = pd.get_dummies(pd.DataFrame(json_))
-            query = query.reindex(columns=model_columns, fill_value=0)
 
-            prediction = list(lr.predict(query)) #так не работает, непрпвильный формат передаваемых данных ( 
+            json_str = json_[0]['text']
 
 
-            return jsonify({'prediction': str(prediction)})
+            prediction = lr.predict(vectorizer.transform([json_str]))
+
+            prediction_emotion = emotions_list[int(prediction) - 1]
+
+            return jsonify({'prediction': prediction_emotion})
 
         except:
 
@@ -47,6 +47,7 @@ if __name__ == '__main__':
         port = 12345 # If you don't provide any port the port will be set to 12345
 
     lr = joblib.load("model.pkl") # Load "model.pkl"
+    vectorizer = joblib.load('vectorizer.pkl')
     print ('Model loaded')
     model_columns = joblib.load("model_columns.pkl") # Load "model_columns.pkl"
     print ('Model columns loaded')
